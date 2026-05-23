@@ -1,8 +1,9 @@
 
+use std::time::Instant;
 use log::{info};
 
 use crate::individual::Individual;
-use crate::operators::Operator;
+use crate::operators::{Operator, Operate};
 
 
 
@@ -17,19 +18,44 @@ pub struct Experiment
     population: Population,
     curr_best_individual: Individual,
     curr_iter_cnt: usize,
-    max_iter_cnt: usize,
+    curr_duration_sec: f64,
+    curr_objective_val: f64,
+    start_time: Option<Instant>,
+    exit_criteria: ExperimentExitCriteria,
     seed: u64,
     operator: Operator,
 }
-
 
 impl Experiment
 {
     pub fn run(&mut self) -> Result<ExperimentResult, Box<dyn std::error::Error>>
     {
-        while self.curr_iter_cnt < self.max_iter_cnt
+        // Mark down the specific point in time where this experiment run was started
+        self.start_time = Some(Instant::now());
+
+        match self.exit_criteria
         {
-            self.step();
+            ExperimentExitCriteria::IterationCount(exit_iter_cnt) => 
+            {
+                while self.curr_iter_cnt < exit_iter_cnt
+                {
+                    self.step();
+                }
+            },
+            ExperimentExitCriteria::DurationSeconds(exit_duration_sec) => 
+            {
+                while self.curr_duration_sec < exit_duration_sec
+                {
+                    self.step();
+                }
+            },
+            ExperimentExitCriteria::ObjectiveThreshold(exit_obj_thresh) => 
+            {
+                while self.curr_objective_val < exit_obj_thresh
+                {
+                    self.step();
+                }
+            },
         }
 
         // Return the experiment's result
@@ -37,16 +63,26 @@ impl Experiment
             ExperimentResult {
                 best_individual: self.curr_best_individual.clone(),
                 final_population: self.population.clone(),
+                final_iter_cnt: self.curr_iter_cnt,
+                final_duration_sec: self.curr_duration_sec,
+                final_objective_val: self.curr_objective_val,
             }
         )
     }
 
     fn step(&mut self) -> ()
     {
+        // Update the current experiment attributes
         info!("Current Iteration Count: {}", self.curr_iter_cnt);
         self.curr_iter_cnt += 1;
+        self.curr_duration_sec = self.start_time.expect("Start time was not initalized").elapsed().as_secs_f64();
 
 
+        // Use the selected operator to run the genetic algorithm
+        self.operator.operate(&self.population, self.seed);
+
+
+        self.curr_objective_val = 0.0;
     }
 
     pub fn size(&self) -> usize
@@ -61,6 +97,26 @@ pub struct ExperimentResult
 {
     best_individual: Individual,
     final_population: Population,
+    final_iter_cnt: usize,
+    final_duration_sec: f64,
+    final_objective_val: f64,
+}
+
+
+#[derive(Debug)]
+pub enum ExperimentExitCriteria
+{
+    IterationCount(usize),
+    DurationSeconds(f64),
+    ObjectiveThreshold(f64),
+}
+
+impl Default for ExperimentExitCriteria
+{
+    fn default() -> Self
+    {
+        ExperimentExitCriteria::IterationCount(Default::default())
+    }
 }
 
 
@@ -68,9 +124,7 @@ pub struct ExperimentResult
 pub struct ExperimentBuilder
 {
     population: Option<Population>,
-    curr_best_individual: Option<Individual>,
-    curr_iter_cnt: Option<usize>,
-    max_iter_cnt: Option<usize>,
+    exit_criteria: Option<ExperimentExitCriteria>,
     seed: Option<u64>,
     operator: Option<Operator>,
 }
@@ -81,9 +135,7 @@ impl ExperimentBuilder
     {
         Self {
             population: None,
-            curr_best_individual: None,
-            curr_iter_cnt: None,
-            max_iter_cnt: None,
+            exit_criteria: None,
             seed: None,
             operator: None,
         }
@@ -95,21 +147,9 @@ impl ExperimentBuilder
         self
     }
 
-    pub fn curr_best_individual(mut self, curr_best_individual: Individual) -> Self
+    pub fn exit_criteria(mut self, exit_criteria: ExperimentExitCriteria) -> Self
     {
-        self.curr_best_individual = Some(curr_best_individual);
-        self
-    }
-
-    pub fn curr_iter_cnt(mut self, curr_iter_cnt: usize) -> Self
-    {
-        self.curr_iter_cnt = Some(curr_iter_cnt);
-        self
-    }
-
-    pub fn max_iter_cnt(mut self, max_iter_cnt: usize) -> Self
-    {
-        self.max_iter_cnt = Some(max_iter_cnt);
+        self.exit_criteria = Some(exit_criteria);
         self
     }
 
@@ -129,12 +169,12 @@ impl ExperimentBuilder
     {
         Experiment {
             population: self.population.unwrap_or_default(),
-            curr_best_individual: self.curr_best_individual.unwrap_or_default(),
-            curr_iter_cnt: self.curr_iter_cnt.unwrap_or_default(),
-            max_iter_cnt: self.max_iter_cnt.unwrap_or_default(),
+            exit_criteria: self.exit_criteria.unwrap_or_default(),
             seed: self.seed.unwrap_or_default(),
             operator: self.operator.unwrap_or_default(),
+            ..Default::default()
         }
     }
 }
+
 

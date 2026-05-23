@@ -7,7 +7,7 @@ use crate::experiment::Population;
 
 
 
-trait Operate
+pub trait Operate
 {
     fn operate(&self, population: &Population, seed: u64) -> ();
 }
@@ -48,8 +48,8 @@ impl Operate for Operator
 }
 
 
-#[derive(Debug)]
-struct SelectionOperator
+#[derive(Debug, Default)]
+pub struct SelectionOperator
 {
 
 }
@@ -71,8 +71,8 @@ impl Operate for SelectionOperator
 }
 
 
-#[derive(Debug)]
-struct CrossoverOperator
+#[derive(Debug, Default)]
+pub struct CrossoverOperator
 {
 
 }
@@ -94,8 +94,8 @@ impl Operate for CrossoverOperator
 }
 
 
-#[derive(Debug)]
-struct MutationOperator 
+#[derive(Debug, Default)]
+pub struct MutationOperator 
 {
 
 }
