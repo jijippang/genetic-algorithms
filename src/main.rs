@@ -4,6 +4,7 @@ use operators::Operator;
 
 mod experiment;
 mod individual;
+mod population;
 mod operators;
 
 
@@ -11,8 +12,9 @@ mod operators;
 fn main() 
 {
     let mut experiment = ExperimentBuilder::new()
-        .exit_criteria(ExperimentExitCriteria::IterationCount(1_000_000))
-        .seed(6240)
+        // .exit_criteria(ExperimentExitCriteria::IterationCount(1_000_000))
+        .exit_criteria(ExperimentExitCriteria::DurationSeconds(0.1))
+        .seed(98242)
         .operator(Operator::Mutation(Default::default()))
         .build();
     // println!("{:#?}", experiment);

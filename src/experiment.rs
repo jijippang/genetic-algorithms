@@ -1,14 +1,12 @@
 
 use std::time::Instant;
+use rand::{RngExt, SeedableRng};
+use rand::rngs::StdRng;
 use log::{info};
 
 use crate::individual::Individual;
+use crate::population::Population;
 use crate::operators::{Operator, Operate};
-
-
-
-
-pub type Population = Vec<Individual>;
 
 
 
@@ -22,7 +20,7 @@ pub struct Experiment
     curr_objective_val: f64,
     start_time: Option<Instant>,
     exit_criteria: ExperimentExitCriteria,
-    seed: u64,
+    seed: Option<u64>,
     operator: Operator,
 }
 
@@ -33,27 +31,35 @@ impl Experiment
         // Mark down the specific point in time where this experiment run was started
         self.start_time = Some(Instant::now());
 
+        // Create and optionally seed the random number generator
+        // TODO: Consider making the rng object an attribute of the Experiment struct
+        let mut rng = match self.seed
+        {
+            Some(seed) => StdRng::seed_from_u64(seed),
+            None => rand::make_rng::<StdRng>(),
+        };
+
         match self.exit_criteria
         {
             ExperimentExitCriteria::IterationCount(exit_iter_cnt) => 
             {
                 while self.curr_iter_cnt < exit_iter_cnt
                 {
-                    self.step();
+                    self.step(&mut rng);
                 }
             },
             ExperimentExitCriteria::DurationSeconds(exit_duration_sec) => 
             {
                 while self.curr_duration_sec < exit_duration_sec
                 {
-                    self.step();
+                    self.step(&mut rng);
                 }
             },
             ExperimentExitCriteria::ObjectiveThreshold(exit_obj_thresh) => 
             {
                 while self.curr_objective_val < exit_obj_thresh
                 {
-                    self.step();
+                    self.step(&mut rng);
                 }
             },
         }
@@ -70,24 +76,19 @@ impl Experiment
         )
     }
 
-    fn step(&mut self) -> ()
+    fn step(&mut self, rng: &mut impl RngExt) -> ()
     {
         // Update the current experiment attributes
         info!("Current Iteration Count: {}", self.curr_iter_cnt);
         self.curr_iter_cnt += 1;
-        self.curr_duration_sec = self.start_time.expect("Start time was not initalized").elapsed().as_secs_f64();
+        self.curr_duration_sec = self.start_time.expect("Start time was not initialized").elapsed().as_secs_f64();
 
 
         // Use the selected operator to run the genetic algorithm
-        self.operator.operate(&self.population, self.seed);
+        self.operator.operate(&self.population, rng);
 
 
         self.curr_objective_val = 0.0;
-    }
-
-    pub fn size(&self) -> usize
-    {
-        self.population.len()
     }
 }
 
@@ -153,9 +154,11 @@ impl ExperimentBuilder
         self
     }
 
-    pub fn seed(mut self, seed: u64) -> Self
+    pub fn seed<T>(mut self, seed: T) -> Self
+    where
+        T: Into<Option<u64>>,
     {
-        self.seed = Some(seed);
+        self.seed = seed.into();
         self
     }
 
@@ -170,7 +173,7 @@ impl ExperimentBuilder
         Experiment {
             population: self.population.unwrap_or_default(),
             exit_criteria: self.exit_criteria.unwrap_or_default(),
-            seed: self.seed.unwrap_or_default(),
+            seed: self.seed,
             operator: self.operator.unwrap_or_default(),
             ..Default::default()
         }

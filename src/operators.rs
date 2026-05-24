@@ -1,6 +1,8 @@
 
+use rand::RngExt;
+
 use crate::individual::Individual;
-use crate::experiment::Population;
+use crate::population::Population;
 
 
 
@@ -9,7 +11,7 @@ use crate::experiment::Population;
 
 pub trait Operate
 {
-    fn operate(&self, population: &Population, seed: u64) -> ();
+    fn operate(&self, population: &Population, rng: &mut impl RngExt) -> ();
 }
 
 
@@ -35,13 +37,13 @@ impl Default for Operator
 
 impl Operate for Operator
 {
-    fn operate(&self, population: &Population, seed: u64) -> ()
+    fn operate(&self, population: &Population, rng: &mut impl RngExt) -> ()
     {
         match self
         {
-            Self::Selection(operator) => operator.operate(population, seed),
-            Self::Crossover(operator) => operator.operate(population, seed),
-            Self::Mutation(operator) => operator.operate(population, seed),
+            Self::Selection(operator) => operator.operate(population, rng),
+            Self::Crossover(operator) => operator.operate(population, rng),
+            Self::Mutation(operator) => operator.operate(population, rng),
         }
 
     }
@@ -64,9 +66,9 @@ impl SelectionOperator
 
 impl Operate for SelectionOperator
 {
-    fn operate(&self, population: &Population, seed: u64) -> ()
+    fn operate(&self, population: &Population, rng: &mut impl RngExt) -> ()
     {
-
+        println!("Selecting!");
     }
 }
 
@@ -87,9 +89,9 @@ impl CrossoverOperator
 
 impl Operate for CrossoverOperator
 {
-    fn operate(&self, population: &Population, seed: u64) -> ()
+    fn operate(&self, population: &Population, rng: &mut impl RngExt) -> ()
     {
-
+        println!("Crossing!");
     }
 }
 
@@ -110,9 +112,9 @@ impl MutationOperator
 
 impl Operate for MutationOperator
 {
-    fn operate(&self, population: &Population, seed: u64) -> ()
+    fn operate(&self, population: &Population, rng: &mut impl RngExt) -> ()
     {
-
+        println!("Mutating!");
     }
 }
 
