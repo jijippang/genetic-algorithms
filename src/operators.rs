@@ -1,5 +1,6 @@
 
 use rand::RngExt;
+use rand_distr::{Distribution, StandardNormal};
 
 use crate::individual::Individual;
 use crate::population::Population;
@@ -11,7 +12,7 @@ use crate::population::Population;
 
 pub trait Operate
 {
-    fn operate(&self, population: &Population, rng: &mut impl RngExt) -> ();
+    fn operate(&self, population: &mut Population, rng: &mut impl RngExt) -> ();
 }
 
 
@@ -37,7 +38,7 @@ impl Default for Operator
 
 impl Operate for Operator
 {
-    fn operate(&self, population: &Population, rng: &mut impl RngExt) -> ()
+    fn operate(&self, population: &mut Population, rng: &mut impl RngExt) -> ()
     {
         match self
         {
@@ -66,7 +67,7 @@ impl SelectionOperator
 
 impl Operate for SelectionOperator
 {
-    fn operate(&self, population: &Population, rng: &mut impl RngExt) -> ()
+    fn operate(&self, population: &mut Population, rng: &mut impl RngExt) -> ()
     {
         println!("Selecting!");
     }
@@ -89,7 +90,7 @@ impl CrossoverOperator
 
 impl Operate for CrossoverOperator
 {
-    fn operate(&self, population: &Population, rng: &mut impl RngExt) -> ()
+    fn operate(&self, population: &mut Population, rng: &mut impl RngExt) -> ()
     {
         println!("Crossing!");
     }
@@ -104,17 +105,26 @@ pub struct MutationOperator
 
 impl MutationOperator
 {
-    fn mutate(&self, individual: Individual) -> ()
+    fn mutate(&self, individual: &mut Individual, rng: &mut impl RngExt) -> ()
     {
+        individual.right_handed = rng.random();
+        individual.height += rng.sample::<f64, StandardNormal>(StandardNormal);
+        // individual.eye_color = rng.random();
 
+        // pub right_handed: bool,
+        // pub height: f64,
+        // pub eye_color: EyeColor,
     }
 }
 
 impl Operate for MutationOperator
 {
-    fn operate(&self, population: &Population, rng: &mut impl RngExt) -> ()
+    fn operate(&self, population: &mut Population, rng: &mut impl RngExt) -> ()
     {
-        println!("Mutating!");
+        for (_, individual) in &mut population.members
+        {
+            self.mutate(individual, rng);
+        }
     }
 }
 

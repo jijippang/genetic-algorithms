@@ -12,9 +12,9 @@ mod operators;
 fn main() 
 {
     let mut experiment = ExperimentBuilder::new()
-        // .exit_criteria(ExperimentExitCriteria::IterationCount(1_000_000))
-        .exit_criteria(ExperimentExitCriteria::DurationSeconds(0.1))
-        .seed(98242)
+        .exit_criteria(ExperimentExitCriteria::IterationCount(1_000_000))
+        // .exit_criteria(ExperimentExitCriteria::DurationSeconds(0.1))
+        .seed(None)
         .operator(Operator::Mutation(Default::default()))
         .build();
     // println!("{:#?}", experiment);

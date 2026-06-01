@@ -10,7 +10,7 @@ use crate::individual::Individual;
 #[derive(Debug, Clone, Default)]
 pub struct Population
 {
-    members: HashMap<Uuid, Individual>,
+    pub members: HashMap<Uuid, Individual>,
 }
 
 

@@ -32,12 +32,17 @@ impl Experiment
         self.start_time = Some(Instant::now());
 
         // Create and optionally seed the random number generator
-        // TODO: Consider making the rng object an attribute of the Experiment struct
         let mut rng = match self.seed
         {
             Some(seed) => StdRng::seed_from_u64(seed),
             None => rand::make_rng::<StdRng>(),
         };
+
+        // Create a random population if population was not already populated
+        if self.population.size() == 0
+        {
+            self.population = Population::new(4, &mut rng);
+        }
 
         match self.exit_criteria
         {
@@ -83,10 +88,8 @@ impl Experiment
         self.curr_iter_cnt += 1;
         self.curr_duration_sec = self.start_time.expect("Start time was not initialized").elapsed().as_secs_f64();
 
-
         // Use the selected operator to run the genetic algorithm
-        self.operator.operate(&self.population, rng);
-
+        self.operator.operate(&mut self.population, rng);
 
         self.curr_objective_val = 0.0;
     }
